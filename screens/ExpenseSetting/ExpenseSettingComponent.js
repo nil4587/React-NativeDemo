@@ -13,6 +13,7 @@ class ExpenseSettingComponent extends Component {
     category_ds = new ListView.DataSource({ rowHasChanged: (r1, r2) => r1 !== r2 });
     categories = []
     max_monthly_limit = "0.00"
+    total_monthly_expense = 0.00
 
     constructor(props) {
         super(props);
@@ -34,6 +35,16 @@ class ExpenseSettingComponent extends Component {
                 selectedCategory: category,
                 categoriesDataSource: this.category_ds.cloneWithRows(this.categories),
             })
+            this.total_monthly_expense = 0.00
+            // Compare and update the category's cat_expenses list
+            this.categories.forEach((value, index) => {
+                if (parseInt(value.cat_id) == parseInt(category.cat_id)) {
+                    value.cat_expenses.forEach((value1, index) => {
+                        this.total_monthly_expense += parseFloat(value1.amount)
+                    })
+                    console.log(value.cat_name)
+                }
+            })
         } catch (error) {
             this.setState({
                 selectedCategory: null,
@@ -47,8 +58,18 @@ class ExpenseSettingComponent extends Component {
     onCategoryItemClick(item, sectionID, rowID) {
         console.log(item.cat_name, sectionID, rowID)
         this.max_monthly_limit = item.cat_month_limit
+        this.total_monthly_expense = 0.00
         this.setState({
             selectedCategory: item,
+        })
+        // Compare and update the category's cat_expenses list
+        this.categories.forEach((value, index) => {
+            if (parseInt(value.cat_id) == parseInt(item.cat_id)) {
+                value.cat_expenses.forEach((value1, index) => {
+                    this.total_monthly_expense += parseFloat(value1.amount)
+                })
+                console.log(value.cat_name)
+            }
         })
     }
 
@@ -119,9 +140,11 @@ class ExpenseSettingComponent extends Component {
 
     // Save button click event
     onSaveClick = () => {
-        const amount = this._amountInput.props.value
-        if (amount == null || amount.trim() == "" || amount.trim().length == 0 || parseInt(amount.trim()) <= 0.00) {
-            this.refs.toast.show("Please enter a valid amount", DURATION.LONG_TIME);
+        const amount = this._amountInput.props.value.trim()
+        if (amount == null || amount.length == 0 || parseFloat(amount) <= 0.00) {
+            this.refs.toast.show("Please enter a valid amount", 3000);
+        } else if (parseFloat(amount) < this.total_monthly_expense) {
+            this.refs.toast.show("Amount should not less than the total expense of the selected month.", 3000);
         } else {
             const { selectedCategory } = this.state;
             selectedCategory.cat_month_limit = amount
@@ -139,13 +162,15 @@ class ExpenseSettingComponent extends Component {
                 categoriesDataSource: this.category_ds.cloneWithRows(this.categories),
             })
 
+            // Update the categories list after adding an item 
             try {
                 AsyncStorage.setItem("default_categories", JSON.stringify(this.categories))
                 // Clear the textfields after successful send
                 this._amountInput.clear()
+                // Callback handler: To move back to parent
+                const { callback } = this.props.navigation.state.params;
+                callback()
                 // Pop to previous view
-                const { nav } = this.props.navigation.state.params;
-                nav()
                 this.props.navigation.goBack()
             } catch (error) {
                 console.log(error.message)

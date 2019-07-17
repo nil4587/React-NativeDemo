@@ -9,9 +9,13 @@ export default (expenselistStyle = StyleSheet.create({
     fontSize: 40,
     fontWeight: "bold"
   },
+  expenseRowTitleText: { fontWeight: "bold" },
+  expenseRowDescText: { fontWeight: "normal", marginRight: 10 },
   expenseRow: {
-    margin: 10,
-    padding: 0,
+    margin: 5,
+    padding: 10,
+    flexDirection: "row",
+    alignItems: "center"
   },
   categoryImage: {
     height: '100%',

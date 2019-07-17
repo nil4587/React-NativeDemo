@@ -26,6 +26,8 @@
 		<true/>
 		<key>NSCameraUsageDescription</key>
 		<string>App needs Camera Access Permission for testing</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>App needs photo library Access</string>
 		<key>NSPhotoLibraryAddUsageDescription</key>
 		<string>App needs photo library Access</string>
 		<key>NSAppTransportSecurity</key>

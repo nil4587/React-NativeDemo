@@ -34,11 +34,11 @@ export default (expenseSettingStyle = StyleSheet.create({
     },
     middleView: {
         padding: 10,
-        backgroundColor: "#FFF111",
+        backgroundColor: "#CCDDEE",
         height: '25%',
     },
     bottomView: {
-        backgroundColor: "#FF11CC",
+        backgroundColor: "#CCDDEE",
         height: '57%',
         padding: 10
     },
@@ -49,7 +49,6 @@ export default (expenseSettingStyle = StyleSheet.create({
     },
     monthlyExpenseTitleText: {
         padding: 10,
-        backgroundColor: "green"
     },
     monthlyExpensePriceText: {
         margin: 5,

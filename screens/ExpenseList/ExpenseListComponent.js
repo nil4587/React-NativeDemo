@@ -9,7 +9,6 @@ import {
 
 import Toast, { DURATION } from "react-native-easy-toast";
 import { switchCase, switchStatement } from "@babel/types";
-import ExpenseSettingComponent from "../ExpenseSetting/ExpenseSettingComponent";
 var ImagePicker = require('react-native-image-picker');
 
 class ExpenseListComponent extends Component {
@@ -19,18 +18,13 @@ class ExpenseListComponent extends Component {
     total_monthly_expense = 0.00
     categories = []
 
+    // Customise navigation options as per screen's requirements
     static navigationOptions = ({ navigation }) => {
         const { state } = navigation;
         return {
             headerRight: (
                 <Button
-                    onPress={() => {
-                        navigation.navigate("Setting", {
-                            nav: () => {
-
-                            }
-                        })
-                    }}
+                    onPress={() => { this.prototype.onSettingClick(navigation) }}
                     title="Setting"
                     color="#fff"
                 />
@@ -38,22 +32,31 @@ class ExpenseListComponent extends Component {
         };
     };
 
+    // Setting Button click event
+    onSettingClick(navigation, prototype) {
+        console.log("Setting Clikced")
+        navigation.navigate("Setting", {
+            callback: this.callback.bind(this)
+        })
+    }
+
+    // Callback handler from child component
+    callback() {
+        this.loadDataFromAsyncStorage()
+    }
+
     constructor(props) {
         super(props);
-        this.state = {};
-        this.loadDataFromAsyncStorage = this.loadDataFromAsyncStorage.bind(this)
+        this.state = {
+            amount: "0.00",
+            description: null,
+            filePath: null,
+            selectedCategory: null,
+        };
         this.loadDataFromAsyncStorage()
     }
 
-    handleOnNavigateBack = () => {
-        this.loadDataFromAsyncStorage()
-    }
-
-    componentWillMount() {
-        console.log("Will Mount")
-    }
-
-
+    // A method to load data from UserDefaults with the help of "AsyncStorage"
     async loadDataFromAsyncStorage() {
         try {
             var tmplist = null
@@ -68,25 +71,23 @@ class ExpenseListComponent extends Component {
             }
             const category = this.categories[0]
             this.max_monthly_limit = category.cat_month_limit
-            this.setState({
-                amount: "0.00",
-                description: null,
-                filePath: {},
-                selectedCategory: category,
-                categoriesDataSource: this.category_ds.cloneWithRows(this.categories),
-                expenseDataSource: this.expense_ds.cloneWithRows(category.cat_expenses),
-            })
-            this.calculateTotalMonthlyExpense(this.state.selectedCategory)
+            this.calculateTotalMonthlyExpense(category)
+            if (this.state == null) {
+                //this.render()
+            } else {
+                this.setState({
+                    selectedCategory: category,
+                    categoriesDataSource: this.category_ds.cloneWithRows(this.categories),
+                    expenseDataSource: this.expense_ds.cloneWithRows(category.cat_expenses),
+                })
+            }
         } catch (error) {
-            this.setState({
-                filePath: {},
-                selectedCategory: null,
-            })
             console.log(error.message)
             this.refs.toast.show(error.message, DURATION.LONG_TIME)
         }
     }
 
+    // A method to calculate total monthly expenses from the list of expenses
     calculateTotalMonthlyExpense(item) {
         // Compare and update the category's cat_expenses list
         this.total_monthly_expense = 0.00
@@ -137,6 +138,7 @@ class ExpenseListComponent extends Component {
     //MARK: Category list row rendering
     //MARK:-=====================================
 
+    // A property to retrieve a category list's row per record
     renderCategoryRow = (item, sectionID, rowID) => {
         console.log(sectionID, rowID)
         var rowTheme = expenselistStyle.categoryImage
@@ -154,6 +156,7 @@ class ExpenseListComponent extends Component {
         )
     }
 
+    // A property to retrive an imagepath based on category id from the list of categories
     imagepath = (cat_id) => {
         switch (parseInt(cat_id)) {
             case 1:
@@ -181,6 +184,7 @@ class ExpenseListComponent extends Component {
         }
     }
 
+    // A property to retrieve a category list
     getCategoryView = () => {
         return (
             <ListView
@@ -197,15 +201,36 @@ class ExpenseListComponent extends Component {
     //MARK: Expense list row rendering
     //MARK:-=====================================
 
+    returnImage = (data) => {
+        const string = "data:image/png;base64," + data
+        return (
+            <Image source={{ uri: string }} resizeMode="cover" style={{ height: 70, width: 70, marginRight: 10 }} />
+        )
+    }
+
     renderExpenseListRow = (expense, sectionID, rowID) => {
+        var imageview = null
+        if (expense.filepath != null) {
+            const { data } = expense.filepath;
+            imageview = this.returnImage(data)
+        }
         return (
             <View nativeID={rowID} style={expenselistStyle.expenseRow}>
+                {imageview}
                 <TouchableOpacity onPress={() => {
                     this.onExpenseItemClick(expense, sectionID, rowID)
                 }}>
-                    <Text>Amount : $ {expense.amount}</Text>
-                    <Text>Description : {(expense.description == null || expense.description.trim().length == 0) ? "N/A" : expense.description}</Text>
-                    <Text>Date : {expense.datetime}</Text>
+                    <Text style={[expenselistStyle.expenseRowTitleText, { marginTop: 5 }]}>Amount :{" "}
+                        <Text style={expenselistStyle.expenseRowDescText}>$ {expense.amount}</Text>
+                    </Text>
+                    <Text style={[expenselistStyle.expenseRowTitleText, { marginTop: 5, marginBottom: 5 }]}>Description :{" "}
+                        <Text style={expenselistStyle.expenseRowDescText}>
+                            {(expense.description == null || expense.description.trim().length == 0) ? "n/a" : expense.description}
+                        </Text>
+                    </Text>
+                    <Text style={[expenselistStyle.expenseRowTitleText, { marginBottom: 5 }]}>Date :{" "}
+                        <Text style={expenselistStyle.expenseRowDescText}>{expense.datetime}</Text>
+                    </Text>
                 </TouchableOpacity>
             </View>
         )
@@ -242,6 +267,18 @@ class ExpenseListComponent extends Component {
         })
     }
 
+    // formattedDateTime = () => {
+    //     const datetime = new Date()
+    //     const date = datetime.getDate(); //Current Date
+    //     const month = datetime.getMonth() + 1; //Current Month
+    //     const year = datetime.getFullYear(); //Current Year
+    //     const hours = datetime.getHours(); //Current Hours
+    //     const min = datetime.getMinutes(); //Current Minutes
+    //     const sec = datetime.getSeconds(); //Current Seconds
+    //     const formattedDatetime = date + '/' + month + '/' + year + ' ' + hours + ':' + min + ':' + sec
+    //     return formattedDatetime
+    // }
+
     // On click of Expense list row 
     onExpenseItemClick(expense, sectionID, rowID) {
         console.log(expense, sectionID, rowID)
@@ -257,8 +294,17 @@ class ExpenseListComponent extends Component {
         } else if (total > this.max_monthly_limit) {
             this.refs.toast.show("Entered amount exceeds the total allowed monthly expense cost.", 2000);
         } else {
-            const { selectedCategory } = this.state;
-            const expense_item = { "cat_id": selectedCategory.cat_id, "cat_name": selectedCategory.cat_name, "amount": amount, "description": description, "datetime": Date() }
+            const { selectedCategory, filePath } = this.state;
+            const datetime = new Date()
+            const localdatetime = datetime.toLocaleString()
+            const expense_item = {
+                "cat_id": selectedCategory.cat_id,
+                "cat_name": selectedCategory.cat_name,
+                "amount": amount,
+                "description": description,
+                "datetime": localdatetime,
+                "filepath": filePath
+            }
             this.total_monthly_expense = 0.00
             // Compare and update the category's cat_expenses list
             this.categories.forEach((value, index) => {
@@ -275,6 +321,7 @@ class ExpenseListComponent extends Component {
                 selectedCategory: selectedCategory,
                 categoriesDataSource: this.category_ds.cloneWithRows(this.categories),
                 expenseDataSource: this.expense_ds.cloneWithRows(selectedCategory.cat_expenses),
+                filePath: null
             })
 
             try {
@@ -446,16 +493,18 @@ class ExpenseListComponent extends Component {
                 alert(response.customButton);
             } else {
                 let source = response;
-                this.state.filePath = source
-                // this.setState({
-                //     filePath: source,
-                // });
+                this.setState({
+                    filePath: source,
+                });
             }
         });
     };
     // Open Camera
     launchCamera = () => {
         var options = {
+            quality: 1.0,
+            maxWidth: 500,
+            maxHeight: 500,
             storageOptions: {
                 skipBackup: true,
                 path: 'images',
@@ -477,9 +526,13 @@ class ExpenseListComponent extends Component {
             }
         });
     };
+
     // Open Photo library
     launchLibrary = () => {
         var options = {
+            quality: 1.0,
+            maxWidth: 500,
+            maxHeight: 500,
             storageOptions: {
                 skipBackup: true,
                 path: 'images',
